@@ -56,8 +56,8 @@ CXXFLAGS    := $(CFLAGS) -std=c++17 -fno-rtti -fno-exceptions
 
 LDFLAGS     := -specs=$(DEVKITPRO)/libnx/switch.specs \
                $(ARCH) -Wl,-Map,$(OUTPUT)/$(TARGET).map \
-               -Wl,--gc-sections
-
+               -Wl,--gc-sections \
+               -Wl,-z,text
 LIBS        := -lnx
 
 LIBPATHS    := -L$(DEVKITPRO)/libnx/lib
