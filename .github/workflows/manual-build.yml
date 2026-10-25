@@ -1,1 +1,72 @@
 
+name: Manual Switch-SMAPI Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-native:
+    name: Native Bootstrap (ARM64)
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          apt-get update -qq
+          apt-get install -y --no-install-recommends python3
+
+      - name: Build native module
+        working-directory: src/native
+        shell: bash
+        run: |
+          . /etc/profile.d/devkit-env.sh
+          make -j$(nproc)
+
+      - name: Upload native artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwitchSMAPI_Bootstrap
+          path: src/native/output/SwitchSMAPI_Bootstrap.nso
+          if-no-files-found: error
+          retention-days: 7
+
+  build-managed:
+    name: Managed Framework (C#)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Restore packages
+        run: dotnet restore src/managed/SwitchSMAPI/SwitchSMAPI.csproj
+
+      - name: Build framework
+        run: |
+          dotnet build src/managed/SwitchSMAPI/SwitchSMAPI.csproj \
+            --configuration Release --no-restore
+
+      - name: Upload managed artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwitchSMAPI_Managed
+          path: src/managed/SwitchSMAPI/bin/Release/netstandard2.0/
+          if-no-files-found: error
+          retention-days: 7
+
